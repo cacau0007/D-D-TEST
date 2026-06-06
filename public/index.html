@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Thornwall — Mesa do Mestre</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#15120e;--bg2:#1d1812;--panel:#241d15;--p2:#2c2419;--ink:#ede0c8;--soft:#b9a884;--gold:#c9a14a;--gs:#8a6e34;--red:#c0392b;--bd:#473720;--bds:#352a1a;--grid:rgba(201,161,74,0.11)}
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;overflow:hidden}
+body{font-family:'EB Garamond',serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column}
+.cin{font-family:'Cinzel',serif}
+button{font-family:inherit;cursor:pointer;color:var(--ink);background:var(--p2);border:1px solid var(--bd);border-radius:4px;padding:5px 9px;transition:.1s;font-size:13px;line-height:1}
+button:hover{border-color:var(--gs);background:#332a1c}
+.btn-gold{background:#2a2113;border-color:var(--gs);color:var(--gold)}
+.btn-gold:hover{border-color:var(--gold)}
+.btn-red{background:#2a1010;border-color:#6b2020;color:#e08080}
+.btn-red:hover{border-color:var(--red)}
+.sm{padding:3px 7px;font-size:11px}
+input,textarea,select{font-family:inherit;background:#1a1510;color:var(--ink);border:1px solid var(--bd);border-radius:3px;padding:4px 7px;font-size:13px;width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gs)}
+.sc::-webkit-scrollbar{width:6px}.sc::-webkit-scrollbar-track{background:var(--bg2)}.sc::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
+
+/* TOP */
+#top{height:44px;flex:0 0 44px;display:flex;align-items:center;gap:8px;padding:0 12px;background:linear-gradient(180deg,#2a2114,#1d1711);border-bottom:2px solid var(--bd);z-index:30}
+#top h1{font-family:'Cinzel',serif;font-size:16px;color:var(--gold);white-space:nowrap}
+.sp{flex:1}.dq{display:flex;gap:3px}
+.dq button{padding:4px 8px;font-size:11px;font-family:'Cinzel',serif}
+
+/* LAYOUT */
+#main{flex:1;display:flex;min-height:0}
+#left{width:195px;flex:0 0 195px;background:var(--bg2);border-right:2px solid var(--bd);display:flex;flex-direction:column;min-height:0}
+#center{flex:1;position:relative;overflow:hidden;background:#15120e}
+#right{width:325px;flex:0 0 325px;background:var(--bg2);border-left:2px solid var(--bd);display:flex;flex-direction:column;min-height:0}
+
+/* PANEL HEADER */
+.ph{font-family:'Cinzel',serif;font-size:10.5px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;padding:8px 11px 5px;border-bottom:1px solid var(--bds);display:flex;align-items:center;justify-content:space-between;flex:0 0 auto}
+
+/* SCENE LIST */
+#slist{overflow-y:auto;flex:1}.si{padding:8px 11px;border-bottom:1px solid var(--bds);cursor:pointer;transition:.1s}.si:hover{background:#251e14}
+.si.act{background:linear-gradient(90deg,#3a2d18,transparent);border-left:3px solid var(--gold)}
+.si .sn{font-size:13.5px}.si .st{font-size:10px;color:var(--soft);font-style:italic}
+#snote{padding:9px 11px;border-top:1px solid var(--bd);background:#1a140e;max-height:38%;overflow-y:auto;flex:0 0 auto}
+#snote h3{font-size:13px;color:var(--gold);font-family:'Cinzel',serif;margin-bottom:3px}
+#snote .rb{background:#0f0c08;border-left:3px solid var(--gs);padding:6px 8px;margin:5px 0;font-style:italic;color:#d8c7a2;font-size:12px;line-height:1.5}
+#snote p{font-size:12px;color:var(--soft);line-height:1.4;white-space:pre-wrap}
+
+/* MAP */
+#mwrap{position:absolute;inset:0;overflow:hidden}
+#map{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+#mbg{position:absolute;top:0;left:0;width:1400px;height:1000px;background-size:cover;background-position:center;background-color:#1a140e}
+#mgrid{position:absolute;top:0;left:0;width:1400px;height:1000px;pointer-events:none;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:50px 50px}
+#mctrls{position:absolute;bottom:10px;right:10px;display:flex;flex-direction:column;gap:4px;z-index:10}
+#mctrls button{width:32px;height:32px;padding:0;font-size:16px;background:rgba(36,29,21,.92)}
+#hint{position:absolute;bottom:10px;left:10px;font-size:10px;color:var(--soft);background:rgba(15,12,8,.72);padding:3px 7px;border-radius:3px;pointer-events:none}
+
+/* TOKENS */
+.tok{position:absolute;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:'Cinzel',serif;font-weight:700;font-size:14px;color:#fff;
+  border:2.5px solid rgba(0,0,0,.5);box-shadow:0 2px 7px rgba(0,0,0,.6);
+  transition:box-shadow .1s;user-select:none;-webkit-user-select:none}
+.tok:hover{box-shadow:0 0 0 3px var(--gold),0 2px 8px #000}
+.tok.sel{box-shadow:0 0 0 3px var(--gold),0 0 16px var(--gold)}
+.tok.dead{filter:grayscale(1) brightness(.45)}
+.tok.dead::after{content:'✕';position:absolute;font-size:28px;color:var(--red);text-shadow:0 0 4px #000}
+.tok .lbl{position:absolute;top:-15px;font-family:'EB Garamond',serif;font-size:10px;color:var(--ink);
+  white-space:nowrap;text-shadow:0 1px 3px #000;background:rgba(15,12,8,.8);padding:0 4px;border-radius:2px;pointer-events:none}
+.tok .hb{position:absolute;bottom:-7px;left:2px;right:2px;height:4px;background:#2a0d0a;border-radius:2px;overflow:hidden;pointer-events:none}
+.tok .hf{height:100%;background:linear-gradient(90deg,#7a1f17,#c0392b);transition:width .2s}
+.tok.global-pc .lbl{color:#90c8ff}
+
+/* RIGHT TABS */
+#tabs{display:flex;border-bottom:2px solid var(--bd);flex:0 0 auto}
+.tab{flex:1;padding:8px 3px;text-align:center;font-family:'Cinzel',serif;font-size:10px;color:var(--soft);cursor:pointer;letter-spacing:.6px;text-transform:uppercase;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.1s}
+.tab:hover{color:var(--ink)}.tab.on{color:var(--gold);border-bottom-color:var(--gold)}
+.tp{display:none;flex:1;flex-direction:column;min-height:0}.tp.on{display:flex}
+
+/* TOKEN LIST */
+#tlist{max-height:150px;overflow-y:auto;flex:0 0 auto;border-bottom:1px solid var(--bds)}
+.tr{display:flex;align-items:center;gap:6px;padding:5px 10px;cursor:pointer;border-bottom:1px solid var(--bds);font-size:12.5px}
+.tr:hover{background:#251e14}.tr.sel{background:#33291a}
+.tr .dot{width:12px;height:12px;border-radius:50%;flex:0 0 12px}
+.tr .tn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr .th{font-size:11px;color:var(--soft)}.tr .tg{font-size:9px;color:var(--gs);margin-left:2px}
+
+/* DETAIL */
+#dph{font-family:'Cinzel',serif;font-size:10.5px;color:var(--gold);letter-spacing:1px;text-transform:uppercase;padding:6px 11px 4px;border-bottom:1px solid var(--bds);display:flex;align-items:center;justify-content:space-between;flex:0 0 auto}
+#det{flex:1;overflow-y:auto}
+#detE{padding:22px 13px;text-align:center;color:var(--soft);font-style:italic;font-size:12px}
+.sb{padding:11px 12px}
+.sb h2{font-size:18px;color:var(--gold);font-family:'Cinzel',serif;display:flex;align-items:center;gap:7px}
+.sb .d2{width:16px;height:16px;border-radius:50%;flex:0 0 16px}
+.sb .meta{font-size:11px;font-style:italic;color:var(--soft);margin:2px 0 7px}
+.rl{height:1px;background:linear-gradient(90deg,var(--gs),transparent);margin:6px 0}
+.hpr{display:flex;align-items:center;gap:5px;margin:7px 0;flex-wrap:wrap}
+.hpb{font-family:'Cinzel',serif;font-size:20px;color:#e08a82}
+.hpr input{width:46px;text-align:center}
+.acr{display:flex;gap:12px;font-size:12.5px;margin:5px 0;align-items:center}
+.acr b{color:var(--gold)}
+.abg{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin:7px 0}
+.ab{background:#1a140e;border:1px solid var(--bds);border-radius:3px;text-align:center;padding:3px 2px}
+.ab .ak{font-family:'Cinzel',serif;font-size:8px;color:var(--gs)}
+.ab .av{font-size:13px}.ab .am{font-size:9px;color:var(--soft)}
+.sbf{margin:5px 0;font-size:12.5px;line-height:1.4}
+.sbf b{color:var(--gold);font-family:'Cinzel',serif;font-size:10px;text-transform:uppercase}
+.act{margin:5px 0;font-size:12.5px;line-height:1.4}.act b{color:#d8b96a}
+
+/* SHOP */
+.shop-item{display:flex;align-items:center;justify-content:space-between;padding:5px 11px;border-bottom:1px solid var(--bds);font-size:12.5px}
+.shop-item .si-name{flex:1}
+.shop-item .si-price{color:var(--gold);font-family:'Cinzel',serif;font-size:11px;white-space:nowrap;margin-left:8px}
+.shop-cat{font-family:'Cinzel',serif;font-size:10px;color:var(--gs);letter-spacing:1px;text-transform:uppercase;padding:6px 11px 3px;background:#1a140e;border-bottom:1px solid var(--bds)}
+.shop-npc{padding:8px 11px;background:#1e1810;border-bottom:1px solid var(--bd);cursor:pointer;transition:.1s}
+.shop-npc:hover{background:#251e14}
+.shop-npc h4{font-family:'Cinzel',serif;font-size:12px;color:var(--gold)}
+.shop-npc p{font-size:11px;color:var(--soft);font-style:italic}
+.shop-npc.open{background:#251e14;border-left:3px solid var(--gold)}
+
+/* MONSTERS */
+#mlist{overflow-y:auto;flex:1}
+.mg{font-family:'Cinzel',serif;font-size:9.5px;color:var(--gs);letter-spacing:1px;text-transform:uppercase;padding:6px 11px 3px;border-bottom:1px solid var(--bds);background:#1a140e}
+.mc{display:flex;align-items:center;gap:8px;padding:7px 11px;border-bottom:1px solid var(--bds);cursor:pointer;transition:.1s}
+.mc:hover{background:#251e14}
+.mc .mi{width:32px;height:32px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:16px;flex:0 0 32px}
+.mc .mn{font-size:13px;flex:1}.mc .ms{font-size:10px;color:var(--soft);font-style:italic}
+.mc .ma{font-size:10px;color:var(--gold);background:#2a2113;border:1px solid var(--gs);border-radius:3px;padding:2px 5px;margin-left:auto;white-space:nowrap}
+
+/* DICE */
+#dlog{max-height:120px;overflow-y:auto;padding:4px 10px;flex:0 0 auto}
+.dl{padding:3px 0;border-bottom:1px solid var(--bds);display:flex;justify-content:space-between;font-size:12.5px}
+.dr{font-family:'Cinzel',serif;color:var(--gold);font-weight:700}
+.dc{color:#7bd47b}.df{color:var(--red)}
+.dform{display:flex;gap:6px;padding:7px 11px}
+
+/* INIT */
+#ilist{flex:1;overflow-y:auto}
+.ir{display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid var(--bds);font-size:12.5px}
+.ir.cur{background:linear-gradient(90deg,#3a2d18,transparent);border-left:3px solid var(--gold)}
+.ir .ir-n{font-family:'Cinzel',serif;color:var(--gold);width:22px;text-align:center;font-weight:700}
+.ir .ir-nm{flex:1}.ir input{width:40px;text-align:center;padding:2px}
+.ictrl{display:flex;gap:5px;padding:7px 11px;flex:0 0 auto}
+
+/* MODAL */
+#mbg{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:100}
+#mbg.on{display:flex}
+.modal{background:var(--panel);border:2px solid var(--bd);border-radius:6px;width:390px;max-width:92vw;max-height:88vh;overflow-y:auto;padding:15px;box-shadow:0 8px 36px #000}
+.modal h3{color:var(--gold);margin-bottom:10px;font-size:16px;font-family:'Cinzel',serif}
+.mf{margin:7px 0}.mf label{display:block;font-size:10.5px;color:var(--soft);margin-bottom:2px}
+.mrow{display:flex;gap:6px}
+.mact{display:flex;gap:6px;justify-content:flex-end;margin-top:12px}
+.sw{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.sw span{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent}
+.sw span.sel{border-color:var(--gold)}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--p2);border:1px solid var(--gs);color:var(--gold);padding:7px 15px;border-radius:5px;z-index:200;opacity:0;transition:.3s;pointer-events:none;font-size:12.5px}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div id="top">
+  <h1 class="cin">⚜ Thornwall</h1>
+  <div class="sp"></div>
+  <div class="dq" id="dq"></div>
+  <button class="sm" onclick="saveNow(true)">💾 Salvar</button>
+  <button class="sm" onclick="exportData()">⬇ Export</button>
+  <button class="sm" onclick="document.getElementById('impF').click()">⬆ Import</button>
+  <button class="sm btn-red" onclick="resetAll()">↺ Reset</button>
+  <input type="file" id="impF" accept=".json" style="display:none" onchange="importData(event)">
+</div>
+
+<div id="main">
+  <div id="left">
+    <div class="ph">Cenas <button class="sm" onclick="addScene()">+</button></div>
+    <div id="slist" class="sc"></div>
+    <div id="snote" class="sc"></div>
+  </div>
+
+  <div id="center">
+    <div id="mwrap">
+      <div id="map">
+        <div id="mbg"></div>
+        <div id="mgrid"></div>
+      </div>
+    </div>
+    <div id="mctrls">
+      <button onclick="zoom(1.15)">+</button>
+      <button onclick="zoom(.87)">−</button>
+      <button onclick="resetView()">⊙</button>
+      <button class="btn-gold" onclick="openAddToken()">＋</button>
+    </div>
+    <div id="hint">Pan: arraste fundo · Zoom: scroll · Token: clique+arraste</div>
+  </div>
+
+  <div id="right">
+    <div id="tabs">
+      <div class="tab on"  data-tab="tokens"   onclick="switchTab('tokens')">Tokens</div>
+      <div class="tab"     data-tab="shop"      onclick="switchTab('shop')">Mercado</div>
+      <div class="tab"     data-tab="monsters"  onclick="switchTab('monsters')">Monstros</div>
+      <div class="tab"     data-tab="dice"      onclick="switchTab('dice')">Dados</div>
+      <div class="tab"     data-tab="init"      onclick="switchTab('init')">Init</div>
+    </div>
+
+    <!-- TOKENS -->
+    <div class="tp on" id="tp-tokens">
+      <div class="ph">Tokens na cena <button class="sm" onclick="openAddToken()">+ Token</button></div>
+      <div id="tlist" class="sc"></div>
+      <div id="dph">Ficha <span id="dacts"></span></div>
+      <div id="det" class="sc"><div id="detE">Clique num token para ver a ficha</div></div>
+    </div>
+
+    <!-- MERCADO -->
+    <div class="tp" id="tp-shop">
+      <div class="ph">Comerciantes do Pátio</div>
+      <div id="shopList" class="sc" style="flex:1;overflow-y:auto"></div>
+    </div>
+
+    <!-- MONSTROS -->
+    <div class="tp" id="tp-monsters">
+      <div class="ph">Clique → spawna no mapa</div>
+      <div id="mlist" class="sc"></div>
+    </div>
+
+    <!-- DADOS -->
+    <div class="tp" id="tp-dice">
+      <div class="ph">Dados</div>
+      <div class="dform">
+        <input id="diceIn" placeholder="2d6+3 ou 1d20" onkeydown="if(event.key==='Enter')rollFormula()">
+        <button class="btn-gold" onclick="rollFormula()">Rolar</button>
+      </div>
+      <div id="dlog" class="sc"></div>
+    </div>
+
+    <!-- INIT -->
+    <div class="tp" id="tp-init">
+      <div class="ph">Iniciativa
+        <span><button class="sm" onclick="autoInit()" title="Rola inimigos da cena">🎲 Auto</button>
+              <button class="sm btn-red" onclick="clearInit()">Limpar</button></span>
+      </div>
+      <div id="ilist" class="sc"></div>
+      <div class="ictrl">
+        <button onclick="addInitManual()">+ Add</button>
+        <button class="btn-gold" style="flex:1" onclick="nextTurn()">Próximo turno ▸</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="mbg" onclick="if(event.target===this)closeMod()">
+  <div class="modal" id="mbody"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================
+   DADOS
+   ===================================================== */
+const COLS=['#c0392b','#8e44ad','#2980b9','#27ae60','#d4a017','#e67e22','#16a085','#888','#c0a060','#d35aa0'];
+function bstat(){return{ac:'',speed:'',str:10,dex:10,con:10,int:10,wis:10,cha:10,traits:'',actions:'',notes:''};}
+
+// Comerciantes do Pátio
+const SHOP_NPCS = [
+  { id:'sh1', name:'Edric, o Boticário', desc:'Velho humano de avental sujo. Sempre cheirando os próprios frascos.',
+    items:[
+      {cat:'Poções'},
+      {name:'Poção de Cura (2d4+2 PV)',        price:'50 gp'},
+      {name:'Poção de Cura Superior (4d4+4 PV)',price:'100 gp'},
+      {name:'Poção de Antídoto',                price:'50 gp'},
+      {name:'Elixir de Saúde',                  price:'120 gp'},
+      {name:'Poção de Escalar',                 price:'75 gp'},
+      {name:'Poção de Respirar Água',           price:'80 gp'},
+      {cat:'Outros'},
+      {name:'Ervas medicinais (cura 1d4, 1 uso)',price:'5 gp'},
+      {name:'Antitoxina (vantagem vs veneno)',   price:'50 gp'},
+      {name:'Óleo Santo (2d6 vs mortos-vivos)',  price:'25 gp'},
+    ]},
+  { id:'sh2', name:'Mira Aço-Negro', desc:'Anã corpulenta. Martelo preso nas costas. Não sorri nunca.',
+    items:[
+      {cat:'Armas Simples'},
+      {name:'Adaga',              price:'2 gp'},
+      {name:'Clava',              price:'1 sp'},
+      {name:'Lança',              price:'1 gp'},
+      {name:'Arco Curto + 20 flechas', price:'30 gp'},
+      {cat:'Armas Marciais'},
+      {name:'Espada Longa',       price:'15 gp'},
+      {name:'Machado de Guerra',  price:'15 gp'},
+      {name:'Rapieira',           price:'25 gp'},
+      {name:'Besta Pesada + 20 virotes', price:'55 gp'},
+      {cat:'Amunição'},
+      {name:'20 Flechas',         price:'1 gp'},
+      {name:'20 Virotes',         price:'1 gp'},
+      {name:'10 Dardos',          price:'5 cp'},
+    ]},
+  { id:'sh3', name:'Voss, o Armeiro', desc:'Humano alto, cicatriz no queixo. Vende armaduras usadas, mas bem conservadas.',
+    items:[
+      {cat:'Armaduras Leves'},
+      {name:'Couro (CA 11+Des)',          price:'10 gp'},
+      {name:'Couro Batido (CA 12+Des)',   price:'45 gp'},
+      {name:'Camisão de Malha (CA 13+Des)',price:'50 gp'},
+      {cat:'Armaduras Médias'},
+      {name:'Cota de Malha (CA 14+Des≤2)',price:'50 gp'},
+      {name:'Brigantina (CA 14+Des≤2)',   price:'30 gp'},
+      {name:'Meia Armadura (CA 15+Des≤2)',price:'750 gp'},
+      {cat:'Escudos'},
+      {name:'Escudo (+2 CA)',             price:'10 gp'},
+      {cat:'Outros'},
+      {name:'Elmo (+0, ignora crit)',     price:'10 gp'},
+      {name:'Botas de ferro (+0)',        price:'3 gp'},
+    ]},
+  { id:'sh4', name:'Selaene, Itens Mágicos', desc:'Elfa de prata, olhos cor de mel. Sorri sempre — o que é inquietante.',
+    items:[
+      {cat:'Itens Mágicos (Comuns)'},
+      {name:'Mochila de Holding (Pocket)',     price:'400 gp'},
+      {name:'Pedra de Luz Permanente',         price:'50 gp'},
+      {name:'Frasco de Ácido',                 price:'25 gp'},
+      {name:'Corda Mágica (obedece comandos)', price:'100 gp'},
+      {cat:'Itens Mágicos (Incomuns)'},
+      {name:'Anel de Natação',                 price:'800 gp'},
+      {name:'Botas de Passo Élficas (Furtividade com vantagem)', price:'2.500 gp'},
+      {name:'Manto de Proteção (+1 CA e testes)', price:'3.500 gp'},
+      {name:'Varinha de Projéteis Mágicos (7 cargas)', price:'1.500 gp'},
+      {cat:'Pergaminhos'},
+      {name:'Pergaminho: Detectar Magia (1°)', price:'25 gp'},
+      {name:'Pergaminho: Invisibilidade (2°)', price:'150 gp'},
+      {name:'Pergaminho: Bola de Fogo (3°)',   price:'300 gp'},
+    ]},
+  { id:'sh5', name:'Bruto, Equipamentos', desc:'Halfling gorducho e feliz. Vende tudo que o resto não vende.',
+    items:[
+      {cat:'Aventura e Exploração'},
+      {name:'Kit de Aventureiro',         price:'10 gp'},
+      {name:'Corda de Seda (18m)',        price:'10 gp'},
+      {name:'Escada dobrável (3m)',       price:'1 sp'},
+      {name:'Lanterna Furada',            price:'5 gp'},
+      {name:'Óleo de Lamparina (8h)',     price:'1 sp'},
+      {name:'Kit de Ladrão (+2 Ferramentas de Ladrão)', price:'25 gp'},
+      {cat:'Social e Utilidade'},
+      {name:'Disfarce básico (chapéu+capote)', price:'5 gp'},
+      {name:'Carta em branco com selo nobre',  price:'15 gp'},
+      {name:'Veneno básico (1d4 por turno, CD10)', price:'100 gp'},
+      {name:'Kit de Cura (+2 Medicina)',       price:'5 gp'},
+      {cat:'Especial (suspeito)'},
+      {name:'Chave mestra (tenta abrir qualquer fechadura)', price:'80 gp'},
+      {name:'"Pó do Esquecimento" (funciona?)', price:'200 gp'},
+    ]},
+];
+
+const MONSTERS=[
+  {group:'One-Shot — Inimigos',list:[
+    {id:'mv',icon:'🌿',name:'Vine Blight',cr:'1/2',color:'#4a6820',hp:26,maxhp:26,
+     stat:{ac:12,speed:'3m',str:15,dex:8,con:14,int:5,wis:10,cha:3,
+      traits:'CR 1/2 (100XP). Camuflagem Falsa: imóvel = planta normal.',
+      actions:'Constrição: +4, alcance 3m, 2d6+1 contundente + agarrado (CD12 Força).\nPlantas Enredadoras (recarga 5-6): raio 4,5m, terreno difícil, agarrado CD12.',
+      notes:'Corrompido pelo cristal. Acalmável CD14 Adestrar Animais.'}},
+    {id:'mn',icon:'🌲',name:'Needle Blight',cr:'1/4',color:'#3d5a10',hp:11,maxhp:11,
+     stat:{ac:12,speed:'9m',str:12,dex:12,con:13,int:4,wis:8,cha:3,
+      traits:'CR 1/4 (50XP).',
+      actions:'Garras: +3, 1,5m, 2d4+1 cortante.\nAgulhas: +3, 9/18m, 2d6 perfurante.',
+      notes:'Corrompido. Acalmável CD14.'}},
+    {id:'mg',icon:'⚔️',name:'Guardião do Cristal',cr:'5',color:'#8e2c24',hp:75,maxhp:75,
+     stat:{ac:20,speed:'9m, voo 9m',str:18,dex:13,con:16,int:10,wis:10,cha:10,
+      traits:'Imune: força, necrótico, veneno + status. Resistência à Magia. Imunidade a 3 magias (escolha).',
+      actions:'Ataque Múltiplo: 2x espada longa.\nEspada Longa: +6, 1d8+4 cortante.',
+      notes:'Hard para 3x nv5. Surge se cristal atacado sem cerimônia.'}},
+  ]},
+  {group:'NPCs Thornwall',list:[
+    {id:'nl',icon:'🔮',name:'Lirien',cr:'—',color:'#8e44ad',hp:30,maxhp:30,
+     stat:{ac:13,speed:'9m',str:10,dex:14,con:12,int:14,wis:13,cha:13,
+      traits:'Elfa. Visão no escuro 18m.',
+      actions:'Varinha mágica: +4, 1d6+2 força.',
+      notes:'GOT: no jardim reconhece planta da família. Pode querer entrar no cristal.'}},
+    {id:'ns',icon:'🌙',name:'Seda',cr:'—',color:'#16a085',hp:18,maxhp:18,
+     stat:{ac:12,speed:'7,5m',str:8,dex:14,con:10,int:11,wis:12,cha:13,
+      traits:'Halfling. Nervosa.',actions:'Funda: +4, 1d4+2.',
+      notes:'Clímax: ajoelhada no cristal. O irmão morreu aqui há 3 anos.'}},
+    {id:'nt',icon:'🪓',name:'Torv',cr:'—',color:'#7f8c8d',hp:34,maxhp:34,
+     stat:{ac:16,speed:'7,5m',str:15,dex:11,con:14,int:10,wis:11,cha:9,
+      traits:'Anão velho. Esteve em Thornwall há 20 anos e saiu — não lembra como.',
+      actions:'Machado de guerra: +4, 1d8+2 cortante.',
+      notes:'Biblioteca: nome dele na lista de rejeitados. CD13 Persuasão ou esperar.'}},
+    {id:'nb',icon:'💀',name:'Bram (morto)',cr:'—',color:'#e67e22',hp:0,maxhp:22,
+     stat:{ac:11,speed:'—',str:11,dex:10,con:12,int:11,wis:10,cha:14,
+      traits:'Mentiu no convite. Rejeitado pelo cristal.',
+      actions:'—',notes:'MORRE no Salão ~30min após chegada. Sem marca visível.'}},
+  ]},
+  {group:'Genéricos',list:[
+    {id:'gg',icon:'🛡️',name:'Guarda',cr:'1/8',color:'#5c6a7a',hp:11,maxhp:11,
+     stat:{ac:16,speed:'9m',str:13,dex:12,con:12,int:10,wis:11,cha:10,traits:'CR 1/8.',actions:'Lança: +3, 1d6+1.',notes:''}},
+    {id:'gb',icon:'🗡️',name:'Bandido',cr:'1/8',color:'#7a5c3a',hp:11,maxhp:11,
+     stat:{ac:12,speed:'9m',str:11,dex:12,con:12,int:10,wis:10,cha:10,traits:'CR 1/8.',actions:'Cimitarra: +3, 1d6+1.\nBesta leve: +3, 1d8+1.',notes:''}},
+    {id:'gm',icon:'🔥',name:'Mago',cr:'6',color:'#9b59b6',hp:40,maxhp:40,
+     stat:{ac:12,speed:'9m',str:9,dex:14,con:11,int:17,wis:12,cha:11,traits:'CR 6. Conj +6.',actions:'Bastão: +2, 1d6-1.\nBola de Fogo: CD14 Des, 8d6 fogo raio 6m.\nRelâmpago: CD14 Des, 8d6 raio linha 30m.',notes:''}},
+    {id:'gw',icon:'🐺',name:'Lobo',cr:'1/4',color:'#6b5a4a',hp:11,maxhp:11,
+     stat:{ac:13,speed:'12m',str:12,dex:15,con:12,int:3,wis:12,cha:6,traits:'Olfato apurado.',actions:'Mordida: +4, 2d4+2, CD11 Força ou cai prostrado.',notes:''}},
+    {id:'gsk',icon:'💀',name:'Esqueleto',cr:'1/4',color:'#a09070',hp:13,maxhp:13,
+     stat:{ac:13,speed:'9m',str:10,dex:14,con:15,int:6,wis:8,cha:5,traits:'Vulnerável: contundente. Imune: veneno.',actions:'Cimitarra: +4, 1d6+2.\nArco curto: +4, 1d6+2.',notes:''}},
+    {id:'gtr',icon:'👹',name:'Troll',cr:'5',color:'#5a7a3a',hp:84,maxhp:84,
+     stat:{ac:15,speed:'9m',str:18,dex:13,con:20,int:7,wis:9,cha:7,traits:'Regeneração: +10PV/turno (exceto ácido/fogo). Olfato apurado.',actions:'Mordida: +7, 1d6+4.\nGarras ×2: +7, 2d6+4.',notes:''}},
+  ]},
+];
+
+const DEFAULT_SCENES=[
+  {id:'s1',name:'Cruzamento de Ashfen',num:'Abertura',tag:'Roleplay',map:'s1_cruzamento.jpg',
+   read:'O Cruzamento de Ashfen. Quatro estradas. Amanhecer. Vocês chegam ao mesmo tempo — estranhos, cada um com uma carta no bolso.',
+   info:'Deixe o silêncio. ~5min depois: carruagem sem cavalos, porta abre, bilhete "O castelo responde a convites aceitos. Entrem."'},
+  {id:'s2',name:'Pátio / Mercado de Thornwall',num:'Ato 1',tag:'Chegada + Mercado',map:'s2_patio.jpg',
+   read:'O castelo surge na névoa. No pátio, outros convidados já estão lá. Portões fecham com um BUM. Voz: "Bem-vindos. O anfitrião chegará em breve."',
+   info:'NPCs: Lirien, Bram, Seda, Torv. Mercado: veja aba Mercado → 5 comerciantes com inventário completo.'},
+  {id:'s3',name:'Salão Principal',num:'Ato 1',tag:'GOT #1 — Bram morre',map:'s3_salao.jpg',
+   read:'Mesa longa, lustres de vela. Vocês sentam. Bram abre um vinho. A conversa começa — o lustre apaga. Três segundos de escuridão. Bram está morto. Sem marca.',
+   info:'Voz: "Lamento. Isso não estava planejado." → Investigação livre: 3 alas disponíveis.'},
+  {id:'s4',name:'Ala 1 — Biblioteca',num:'Ato 2',tag:'Investigação',map:'s4.svg',
+   read:'Milhares de livros. Lareira que nunca apaga. Registros de grupos anteriores — nenhum saiu.',
+   info:'Diário oculto: V. é o castelo. Coleta emoções para sobreviver. Torv: nome dele numa lista de rejeitados há 20 anos.'},
+  {id:'s5',name:'Ala 2 — Jardim Interior',num:'Ato 2',tag:'Combate',map:'s5_jardim.jpg',
+   read:'Jardim com teto de vidro. Plantas que não deveriam crescer na montanha. Flores que seguem quem passa.',
+   info:'2 Vine Blights + 1 Needle Blight (corrompidos, com dor — acalmáveis CD14). Cristal no fundo da fonte → porões. GOT: Lirien reconhece planta da família.'},
+  {id:'s6',name:'Ala 3 — Aposentos',num:'Ato 3',tag:'PUZZLE',map:'s6_aposentos.jpg',
+   read:'Corredor. 6 portas. 5 trancadas. 1 aberta — quarto de Bram. Uma caixa com 5 travas.',
+   info:'PUZZLE: Pedro(Corvo é 1°, Âncora não é 2ª) | Paulo(Espada é última, Lua vem após Chama) | Bassi(Chama não é 1ª/última, Corvo antes de Âncora)\nSOLUÇÃO: 1-Corvo 2-Chama 3-Lua 4-Âncora 5-Espada\nErro = 1d6 raio no mais próximo.'},
+  {id:'s7',name:'Ala 4 — Os Porões',num:'Ato 4',tag:'GOT #3 + Revelação',map:'s7_porao.jpg',
+   read:'Escadas. Frio. Câmara circular. Cristal azul pulsando. Seda está de joelhos, mãos no cristal, murmurando o nome do irmão.',
+   info:'V. revela a verdade. ESCOLHAS: destruir / libertar CD16 Arcana / assumir controle / negociar CD17 Persuasão.\nBoss: Guardião do Cristal se cristal atacado sem cerimônia.'},
+  {id:'s8',name:'Salão — Batalha Final',num:'Clímax',tag:'Combate opcional',map:'s2_patio.jpg',
+   read:'O grupo foge dos Porões. A única saída passa pelo Salão. O Guardião os segue — e aqui é onde tudo termina.',
+   info:'Terreno: colunas dão cobertura. Se cristal destruído violentamente: fim de cada rodada CD13 Con ou Atordoado. Boss: Guardião do Cristal (CA20, 75PV).'},
+];
+
+/* =====================================================
+   ESTADO
+   ===================================================== */
+let D; const $=s=>document.querySelector(s); const $$=s=>document.querySelectorAll(s);
+let SEL=null;
+let openShop=null;
+
+function load(){try{const r=localStorage.getItem('tw4');D=r?JSON.parse(r):def();}catch{D=def();}}
+function def(){return{
+  scenes:JSON.parse(JSON.stringify(DEFAULT_SCENES)),
+  tokens:[
+    {id:'pc1',scene:'__global',name:'Pedro',type:'pc',color:'#2980b9',x:600,y:480,hp:40,maxhp:40,stat:bstat()},
+    {id:'pc2',scene:'__global',name:'Paulo',type:'pc',color:'#27ae60',x:680,y:450,hp:38,maxhp:38,stat:bstat()},
+    {id:'pc3',scene:'__global',name:'Bassi',type:'pc',color:'#d4a017',x:640,y:540,hp:42,maxhp:42,stat:bstat()},
+  ],
+  dice:[],init:[],turn:0,scene:'s1'
+};}
+
+let _st; function save(){clearTimeout(_st);_st=setTimeout(()=>localStorage.setItem('tw4',JSON.stringify(D)),350);}
+function saveNow(msg){localStorage.setItem('tw4',JSON.stringify(D));if(msg)toast('Salvo ✓');}
+
+/* =====================================================
+   PAN / ZOOM — abordagem com pointercapture para drag fluido
+   ===================================================== */
+let V={x:-250,y:-100,z:.75};
+function applyV(){$('#map').style.transform=`translate(${V.x}px,${V.y}px) scale(${V.z})`;}
+function zoom(f){
+  const c=$('#center').getBoundingClientRect();
+  const wx=(c.width/2-V.x)/V.z,wy=(c.height/2-V.y)/V.z;
+  V.z=Math.max(.25,Math.min(2.5,V.z*f));
+  V.x=c.width/2-wx*V.z;V.y=c.height/2-wy*V.z;applyV();
+}
+function resetView(){V={x:-250,y:-100,z:.75};applyV();}
+
+// Pan do mapa com pointer events
+const mwrap=$('#mwrap');
+let panActive=false,panStart={x:0,y:0};
+mwrap.addEventListener('pointerdown',e=>{
+  if(e.target.closest('.tok'))return;
+  panActive=true;mwrap.setPointerCapture(e.pointerId);
+  mwrap.style.cursor='grabbing';
+  panStart={x:e.clientX-V.x,y:e.clientY-V.y};
+});
+mwrap.addEventListener('pointermove',e=>{
+  if(!panActive)return;
+  V.x=e.clientX-panStart.x;V.y=e.clientY-panStart.y;applyV();
+});
+mwrap.addEventListener('pointerup',e=>{panActive=false;mwrap.style.cursor='grab';});
+mwrap.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.1:.91);},{passive:false});
+
+/* =====================================================
+   TOKEN DRAG — pointer events por token
+   ===================================================== */
+function makeDrag(el,t){
+  let active=false,offX=0,offY=0;
+  el.addEventListener('pointerdown',e=>{
+    e.stopPropagation();e.preventDefault();
+    active=true;el.setPointerCapture(e.pointerId);
+    el.style.cursor='grabbing';el.style.zIndex='999';
+    selTok(t.id);
+    const r=$('#map').getBoundingClientRect();
+    offX=(e.clientX-r.left)/V.z-t.x;
+    offY=(e.clientY-r.top)/V.z-t.y;
+  });
+  el.addEventListener('pointermove',e=>{
+    if(!active)return;
+    const r=$('#map').getBoundingClientRect();
+    t.x=Math.round((e.clientX-r.left)/V.z-offX);
+    t.y=Math.round((e.clientY-r.top)/V.z-offY);
+    el.style.left=t.x+'px';el.style.top=t.y+'px';
+  });
+  el.addEventListener('pointerup',e=>{
+    active=false;el.style.cursor='grab';el.style.zIndex='';save();
+  });
+  el.addEventListener('dblclick',e=>{
+    e.stopPropagation();
+    const n=prompt('Nome:',t.name);if(n&&n!==t.name){t.name=n;renderTokens();renderTList();renderDet();save();}
+  });
+}
+
+/* =====================================================
+   CENAS
+   ===================================================== */
+function curScene(){return D.scenes.find(s=>s.id===D.scene)||D.scenes[0];}
+function sceneToks(){
+  const sc=D.scene;
+  return D.tokens.filter(t=>t.scene===sc||t.scene==='__global');
+}
+
+function renderScenes(){
+  const s=curScene();
+  const bg=$('#mbg');
+  if(s&&s.map){bg.style.backgroundImage=`url('/maps/${s.map}')`;bg.style.backgroundSize='cover';bg.style.backgroundPosition='center';}
+  else{bg.style.backgroundImage='none';bg.style.backgroundColor='#1a140e';}
+
+  const l=$('#slist');l.innerHTML='';
+  D.scenes.forEach(sc=>{
+    const d=document.createElement('div');d.className='si'+(sc.id===D.scene?' act':'');
+    d.innerHTML=`<div class="st">${sc.num||''}</div><div class="sn">${esc(sc.name)}</div><div class="st">${sc.tag||''}</div>`;
+    d.onclick=()=>{D.scene=sc.id;SEL=null;render();save();};
+    l.appendChild(d);
+  });
+
+  const n=$('#snote');
+  n.innerHTML=`<h3>${esc(s.name)} <button class="sm" onclick="editScene('${s.id}')" style="float:right">✎</button></h3>
+    ${s.read?`<div class="rb">"${esc(s.read)}"</div>`:''}
+    <p>${esc(s.info||'')}</p>
+    <div style="margin-top:6px"><button class="sm" onclick="setMap('${s.id}')">🖼 Mapa custom</button></div>`;
+}
+
+function setMap(id){const s=D.scenes.find(x=>x.id===id);const u=prompt('Nome do arquivo em /maps/:',s.map||'');if(u!==null){s.map=u.trim();renderScenes();save();}}
+function addScene(){const id='s'+Date.now();D.scenes.push({id,name:'Nova Cena',num:'',tag:'',map:'',read:'',info:''});D.scene=id;render();save();editScene(id);}
+function editScene(id){
+  const s=D.scenes.find(x=>x.id===id);
+  openMod(`<h3>Editar Cena</h3>
+   <div class="mf"><label>Nome</label><input id="e_nm" value="${ea(s.name)}"></div>
+   <div class="mrow"><div class="mf" style="flex:1"><label>Etapa</label><input id="e_num" value="${ea(s.num||'')}"></div>
+   <div class="mf" style="flex:1"><label>Tag</label><input id="e_tag" value="${ea(s.tag||'')}"></div></div>
+   <div class="mf"><label>Mapa (arquivo /maps/)</label><input id="e_map" value="${ea(s.map||'')}"></div>
+   <div class="mf"><label>Texto pra ler em voz alta</label><textarea id="e_rd" rows="3">${esc(s.read||'')}</textarea></div>
+   <div class="mf"><label>Notas DM</label><textarea id="e_inf" rows="3">${esc(s.info||'')}</textarea></div>
+   <div class="mact"><button class="btn-red" onclick="delScene('${id}')">Excluir</button>
+   <button onclick="closeMod()">Cancelar</button>
+   <button class="btn-gold" onclick="saveScene('${id}')">Salvar</button></div>`);
+}
+function saveScene(id){const s=D.scenes.find(x=>x.id===id);
+  s.name=$('#e_nm').value;s.num=$('#e_num').value;s.tag=$('#e_tag').value;
+  s.map=$('#e_map').value;s.read=$('#e_rd').value;s.info=$('#e_inf').value;
+  closeMod();render();save();}
+function delScene(id){if(D.scenes.length<=1){toast('Mínimo 1 cena');return;}if(!confirm('Excluir?'))return;
+  D.tokens=D.tokens.filter(t=>t.scene!==id);D.scenes=D.scenes.filter(s=>s.id!==id);
+  D.scene=D.scenes[0].id;closeMod();render();save();}
+
+/* =====================================================
+   TOKENS
+   ===================================================== */
+function renderTokens(){
+  $$('.tok').forEach(e=>e.remove());
+  const map=$('#map');
+  sceneToks().forEach(t=>{
+    const el=document.createElement('div');
+    const isGlobal=t.scene==='__global';
+    el.className='tok'+(t.id===SEL?' sel':'')+(t.hp<=0?' dead':'')+(isGlobal?' global-pc':'');
+    el.style.cssText=`left:${t.x}px;top:${t.y}px;background:${t.color};cursor:grab`;
+    el.dataset.id=t.id;
+    const ini=t.name.replace(/[^A-Za-zÀ-ÿ0-9]/g,'').slice(0,2).toUpperCase()||'??';
+    const pct=t.maxhp?Math.max(0,Math.min(100,100*t.hp/t.maxhp)):100;
+    el.innerHTML=`<span class="lbl">${esc(t.name)}</span>${ini}
+      ${t.maxhp?`<div class="hb"><div class="hf" style="width:${pct}%"></div></div>`:''}`;
+    makeDrag(el,t);
+    map.appendChild(el);
+  });
+}
+
+function renderTList(){
+  const b=$('#tlist');b.innerHTML='';
+  const toks=sceneToks();
+  if(!toks.length){b.innerHTML='<div style="padding:8px 10px;color:var(--soft);font-style:italic;font-size:11px">Nenhum token.</div>';return;}
+  toks.forEach(t=>{
+    const r=document.createElement('div');r.className='tr'+(t.id===SEL?' sel':'');
+    const isG=t.scene==='__global';
+    r.innerHTML=`<span class="dot" style="background:${t.color}"></span>
+      <span class="tn">${esc(t.name)}</span>
+      ${isG?'<span class="tg">GLOBAL</span>':''}
+      <span class="th">${t.maxhp?t.hp+'/'+t.maxhp:''}</span>`;
+    r.onclick=()=>selTok(t.id);
+    b.appendChild(r);
+  });
+}
+
+function selTok(id){SEL=id;renderTokens();renderTList();renderDet();}
+
+function renderDet(){
+  const t=D.tokens.find(x=>x.id===SEL);
+  const da=$('#dacts'),det=$('#det');
+  if(!t){da.innerHTML='';det.innerHTML='<div id="detE">Clique num token para ver a ficha</div>';return;}
+  da.innerHTML=`<button class="sm" onclick="editTok('${t.id}')">✎</button>
+    <button class="sm btn-red" onclick="delTok('${t.id}')">✕</button>`;
+  const s=t.stat||bstat();
+  const mod=v=>{const m=Math.floor((v-10)/2);return(m>=0?'+':'')+m;};
+  const isG=t.scene==='__global';
+  det.innerHTML=`<div class="sb">
+    <h2><span class="d2" style="background:${t.color}"></span>${esc(t.name)}
+      ${isG?'<span style="font-size:10px;color:var(--gs);margin-left:4px">GLOBAL</span>':''}</h2>
+    <div class="meta">${typeLbl(t.type)}</div>
+    <div class="hpr">
+      <span class="hpb" id="hpb">${t.hp}</span>
+      <span style="color:var(--soft)">/ ${t.maxhp} PV</span>
+      <input type="number" id="dmgn" value="5" style="width:44px;text-align:center">
+      <button class="btn-red" onclick="dmg('${t.id}',1)">− Dano</button>
+      <button onclick="dmg('${t.id}',-1)">+ Cura</button>
+    </div>
+    <div class="acr"><span><b>CA</b> ${s.ac||'—'}</span><span><b>Deslo.</b> ${s.speed||'—'}</span>
+      <button class="sm" onclick="rollFor('${t.id}')">🎲 d20</button></div>
+    <div class="abg">
+      ${['str','dex','con','int','wis','cha'].map(k=>`<div class="ab">
+        <div class="ak">${k.toUpperCase()}</div><div class="av">${s[k]}</div><div class="am">${mod(s[k])}</div></div>`).join('')}
+    </div>
+    ${s.traits?`<div class="sbf"><b>Traços</b><br>${nl(s.traits)}</div><div class="rl"></div>`:''}
+    ${s.actions?`<div class="act"><b>Ações</b><br>${nl(s.actions)}</div><div class="rl"></div>`:''}
+    ${s.notes?`<div class="sbf" style="color:var(--soft);font-style:italic"><b>Notas</b><br>${nl(s.notes)}</div>`:''}
+    <div style="display:flex;gap:5px;margin-top:7px;flex-wrap:wrap">
+      <button class="sm" onclick="addToInit('${t.id}')">+ Iniciativa</button>
+      ${t.hp<=0?`<button class="sm" onclick="revive('${t.id}')">↺ Reviver</button>`:''}
+      ${!isG?`<button class="sm" onclick="makeGlobal('${t.id}')">🌐 Tornar Global</button>`:`<button class="sm btn-red" onclick="makeLocal('${t.id}')">📍 Fixar nesta cena</button>`}
+    </div>
+  </div>`;
+}
+function typeLbl(t){return{pc:'Jogador',npc:'NPC',enemy:'Inimigo'}[t]||t;}
+function dmg(id,sign){const t=D.tokens.find(x=>x.id===id);const n=parseInt($('#dmgn').value||0);t.hp=Math.max(0,Math.min(t.maxhp,t.hp-sign*n));renderTokens();renderTList();renderDet();save();}
+function revive(id){const t=D.tokens.find(x=>x.id===id);t.hp=t.maxhp;renderTokens();renderTList();renderDet();save();}
+function makeGlobal(id){const t=D.tokens.find(x=>x.id===id);t.scene='__global';renderTokens();renderTList();renderDet();save();toast(t.name+' agora é global');}
+function makeLocal(id){const t=D.tokens.find(x=>x.id===id);t.scene=D.scene;renderTokens();renderTList();renderDet();save();toast(t.name+' fixado nesta cena');}
+
+function openAddToken(){
+  let pick=COLS[0];
+  openMod(`<h3>Novo Token</h3>
+   <div class="mf"><label>Nome</label><input id="t_nm" placeholder="Goblin 1"></div>
+   <div class="mrow">
+     <div class="mf" style="flex:1"><label>Tipo</label>
+       <select id="t_tp"><option value="enemy">Inimigo</option><option value="npc">NPC</option><option value="pc">Jogador</option></select></div>
+     <div class="mf" style="flex:1"><label>PV máx</label><input type="number" id="t_hp" value="20"></div>
+     <div class="mf" style="flex:1"><label>Global?</label>
+       <select id="t_gl"><option value="0">Não (esta cena)</option><option value="1">Sim (todas as cenas)</option></select></div>
+   </div>
+   <div class="mf"><label>Cor</label><div class="sw" id="t_sw"></div></div>
+   <div class="mact"><button onclick="closeMod()">Cancelar</button>
+     <button class="btn-gold" onclick="createTok()">Criar</button></div>`);
+  const sw=$('#t_sw');COLS.forEach((c,i)=>{const sp=document.createElement('span');sp.style.background=c;
+    if(i===0)sp.classList.add('sel');sp.onclick=()=>{pick=c;$$('#t_sw span').forEach(x=>x.classList.remove('sel'));sp.classList.add('sel');};sw.appendChild(sp);});
+  window._pc=()=>pick;
+}
+function createTok(){
+  const nm=$('#t_nm').value||'Token';const hp=parseInt($('#t_hp').value||10);
+  const gl=$('#t_gl').value==='1';
+  const t={id:'t'+Date.now(),scene:gl?'__global':D.scene,name:nm,type:$('#t_tp').value,
+    color:window._pc(),x:560+Math.random()*280,y:400+Math.random()*200,hp,maxhp:hp,stat:bstat()};
+  D.tokens.push(t);closeMod();selTok(t.id);renderTokens();renderTList();renderDet();save();
+}
+function editTok(id){
+  const t=D.tokens.find(x=>x.id===id);const s=t.stat;let pick=t.color;
+  openMod(`<h3>Editar Ficha</h3>
+   <div class="mrow">
+     <div class="mf" style="flex:2"><label>Nome</label><input id="f_nm" value="${ea(t.name)}"></div>
+     <div class="mf" style="flex:1"><label>Tipo</label>
+       <select id="f_tp"><option value="enemy"${t.type==='enemy'?' selected':''}>Inimigo</option>
+       <option value="npc"${t.type==='npc'?' selected':''}>NPC</option>
+       <option value="pc"${t.type==='pc'?' selected':''}>Jogador</option></select></div>
+   </div>
+   <div class="mrow">
+     <div class="mf" style="flex:1"><label>PV atual</label><input type="number" id="f_hp" value="${t.hp}"></div>
+     <div class="mf" style="flex:1"><label>PV máx</label><input type="number" id="f_mhp" value="${t.maxhp}"></div>
+     <div class="mf" style="flex:1"><label>CA</label><input id="f_ac" value="${ea(s.ac)}"></div>
+     <div class="mf" style="flex:1"><label>Deslo.</label><input id="f_sp" value="${ea(s.speed)}"></div>
+   </div>
+   <div class="mrow">${['str','dex','con','int','wis','cha'].map(k=>`<div class="mf" style="flex:1"><label>${k.toUpperCase()}</label><input type="number" id="f_${k}" value="${s[k]}"></div>`).join('')}</div>
+   <div class="mf"><label>Traços</label><textarea id="f_tr" rows="2">${esc(s.traits)}</textarea></div>
+   <div class="mf"><label>Ações</label><textarea id="f_ac2" rows="3">${esc(s.actions)}</textarea></div>
+   <div class="mf"><label>Notas DM</label><textarea id="f_no" rows="2">${esc(s.notes)}</textarea></div>
+   <div class="mf"><label>Cor</label><div class="sw" id="f_sw"></div></div>
+   <div class="mact"><button onclick="closeMod()">Cancelar</button>
+     <button class="btn-gold" onclick="saveTok('${id}')">Salvar</button></div>`);
+  const sw=$('#f_sw');COLS.forEach(c=>{const sp=document.createElement('span');sp.style.background=c;
+    if(c===t.color)sp.classList.add('sel');sp.onclick=()=>{pick=c;$$('#f_sw span').forEach(x=>x.classList.remove('sel'));sp.classList.add('sel');};sw.appendChild(sp);});
+  window._pc=()=>pick;
+}
+function saveTok(id){
+  const t=D.tokens.find(x=>x.id===id);
+  t.name=$('#f_nm').value;t.type=$('#f_tp').value;t.color=window._pc();
+  t.hp=parseInt($('#f_hp').value);t.maxhp=parseInt($('#f_mhp').value);
+  t.stat.ac=$('#f_ac').value;t.stat.speed=$('#f_sp').value;
+  ['str','dex','con','int','wis','cha'].forEach(k=>t.stat[k]=parseInt($('#f_'+k).value)||10);
+  t.stat.traits=$('#f_tr').value;t.stat.actions=$('#f_ac2').value;t.stat.notes=$('#f_no').value;
+  closeMod();renderTokens();renderTList();renderDet();save();
+}
+function delTok(id){if(!confirm('Excluir token?'))return;D.tokens=D.tokens.filter(t=>t.id!==id);if(SEL===id)SEL=null;render();save();}
+
+/* =====================================================
+   MONSTROS
+   ===================================================== */
+function renderMonsters(){
+  const ml=$('#mlist');ml.innerHTML='';
+  MONSTERS.forEach(grp=>{
+    const g=document.createElement('div');g.className='mg';g.textContent=grp.group;ml.appendChild(g);
+    grp.list.forEach(m=>{
+      const d=document.createElement('div');d.className='mc';
+      d.innerHTML=`<div class="mi" style="background:${m.color}22;border:1.5px solid ${m.color}">${m.icon}</div>
+        <div style="flex:1"><div class="mn">${esc(m.name)}</div><div class="ms">CR ${m.cr} · ${m.hp}PV · CA${m.stat.ac||'?'}</div></div>
+        <div class="ma">↓ Spawn</div>`;
+      d.onclick=()=>spawnMonster(m);ml.appendChild(d);
+    });
+  });
+}
+function spawnMonster(m){
+  const ex=D.tokens.filter(t=>t.scene===D.scene&&t.name.startsWith(m.name));
+  const name=ex.length>0?`${m.name} ${ex.length+1}`:m.name;
+  const t={id:'m'+Date.now(),scene:D.scene,name,type:'enemy',color:m.color,
+    x:480+Math.random()*440,y:380+Math.random()*240,hp:m.hp,maxhp:m.maxhp,
+    stat:JSON.parse(JSON.stringify(m.stat))};
+  D.tokens.push(t);switchTab('tokens');selTok(t.id);render();save();toast(`${name} spawnado!`);
+}
+
+/* =====================================================
+   MERCADO
+   ===================================================== */
+function renderShop(){
+  const sl=$('#shopList');sl.innerHTML='';
+  SHOP_NPCS.forEach(npc=>{
+    const hdr=document.createElement('div');
+    hdr.className='shop-npc'+(openShop===npc.id?' open':'');
+    hdr.innerHTML=`<h4>${esc(npc.name)}</h4><p>${esc(npc.desc)}</p>`;
+    hdr.onclick=()=>{openShop=openShop===npc.id?null:npc.id;renderShop();};
+    sl.appendChild(hdr);
+    if(openShop===npc.id){
+      npc.items.forEach(item=>{
+        const d=document.createElement('div');
+        if(item.cat){d.className='shop-cat';d.textContent=item.cat;}
+        else{d.className='shop-item';d.innerHTML=`<span class="si-name">${esc(item.name)}</span><span class="si-price">${esc(item.price)}</span>`;}
+        sl.appendChild(d);
+      });
+    }
+  });
+}
+
+/* =====================================================
+   DADOS
+   ===================================================== */
+function renderDiceQuick(){const q=$('#dq');q.innerHTML='';
+  [4,6,8,10,12,20,100].forEach(d=>{const b=document.createElement('button');b.textContent='d'+d;b.onclick=()=>rollDie(d);q.appendChild(b);});}
+function rollDie(d){const r=1+Math.floor(Math.random()*d);logDice('d'+d,[r],0,r,d);return r;}
+function rollFormula(){
+  const f=($('#diceIn').value||'1d20').trim().toLowerCase();
+  const m=f.match(/^(\d*)d(\d+)\s*([+-]\s*\d+)?$/);
+  if(!m){toast('Formato: XdY+Z');return;}
+  const n=parseInt(m[1]||1),d=parseInt(m[2]),mod=m[3]?parseInt(m[3].replace(/\s/g,'')):0;
+  if(n>50){toast('Máx 50');return;}
+  const rolls=[];let sum=0;
+  for(let i=0;i<n;i++){const r=1+Math.floor(Math.random()*d);rolls.push(r);sum+=r;}
+  logDice(f,rolls,mod,sum+mod,d);
+}
+function rollFor(id){const t=D.tokens.find(x=>x.id===id);const r=rollDie(20);toast(`${t.name}: d20 → ${r}`);}
+function logDice(label,rolls,mod,total,die){
+  D.dice.unshift({label,rolls,mod,total,die});
+  if(D.dice.length>40)D.dice.pop();renderDiceLog();save();toast(`${label}: ${total}`);
+}
+function renderDiceLog(){const b=$('#dlog');b.innerHTML='';
+  D.dice.forEach(e=>{
+    let cls='';if(e.die===20&&e.rolls.length===1){if(e.rolls[0]===20)cls='dc';if(e.rolls[0]===1)cls='df';}
+    const det=e.rolls.length>1||e.mod?`[${e.rolls.join(',')}]${e.mod?(e.mod>0?'+'+e.mod:e.mod):''}`:'';
+    const d=document.createElement('div');d.className='dl';
+    d.innerHTML=`<span>${esc(e.label)} <span style="color:var(--soft);font-size:11px">${det}</span></span><span class="dr ${cls}">${e.total}</span>`;
+    b.appendChild(d);});}
+
+/* =====================================================
+   INICIATIVA
+   ===================================================== */
+function renderInit(){const b=$('#ilist');b.innerHTML='';
+  if(!D.init.length){b.innerHTML='<div style="padding:10px;color:var(--soft);font-style:italic;font-size:11px">Sem combatentes. Use 🎲 Auto ou + Add.</div>';return;}
+  D.init.forEach((c,i)=>{
+    const r=document.createElement('div');r.className='ir'+(i===D.turn?' cur':'');
+    const tk=c.tid?D.tokens.find(t=>t.id===c.tid):null;
+    const hp=tk?` <span style="color:var(--soft);font-size:10px">${tk.hp}/${tk.maxhp}</span>`:'';
+    r.innerHTML=`<input type="number" value="${c.roll}" style="width:38px" onchange="setInit(${i},this.value)">
+      <span class="ir-nm">${esc(c.name)}${hp}</span>
+      <button class="sm btn-red" onclick="rmInit(${i})">✕</button>`;
+    b.appendChild(r);});}
+function setInit(i,v){D.init[i].roll=parseInt(v)||0;sortInit();}
+function sortInit(){const cur=D.init[D.turn];D.init.sort((a,b)=>b.roll-a.roll);D.turn=Math.max(0,D.init.indexOf(cur));renderInit();save();}
+function addToInit(id){const t=D.tokens.find(x=>x.id===id);if(D.init.find(c=>c.tid===id)){toast('Já na iniciativa');return;}
+  const r=1+Math.floor(Math.random()*20)+Math.floor(((t.stat.dex||10)-10)/2);
+  D.init.push({name:t.name,roll:r,tid:id});sortInit();toast(`${t.name}: init ${r}`);}
+function autoInit(){sceneToks().filter(t=>t.type==='enemy'&&t.hp>0).forEach(t=>{
+  if(D.init.find(c=>c.tid===t.id))return;
+  const r=1+Math.floor(Math.random()*20)+Math.floor(((t.stat.dex||10)-10)/2);
+  D.init.push({name:t.name,roll:r,tid:t.id});});sortInit();toast('Inimigos da cena rolados');}
+function addInitManual(){const nm=prompt('Nome:');if(!nm)return;const r=parseInt(prompt('Iniciativa:','10'))||10;D.init.push({name:nm,roll:r,tid:null});sortInit();}
+function rmInit(i){D.init.splice(i,1);if(D.turn>=D.init.length)D.turn=0;renderInit();save();}
+function clearInit(){D.init=[];D.turn=0;renderInit();save();}
+function nextTurn(){if(!D.init.length)return;D.turn=(D.turn+1)%D.init.length;renderInit();save();toast('Vez: '+D.init[D.turn].name);}
+
+/* =====================================================
+   ABAS
+   ===================================================== */
+function switchTab(id){
+  $$('.tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===id));
+  $$('.tp').forEach(p=>p.classList.remove('on'));
+  const p=$('#tp-'+id);if(p)p.classList.add('on');
+  if(id==='shop')renderShop();
+}
+
+/* =====================================================
+   MODAL / UTIL
+   ===================================================== */
+function openMod(html){$('#mbody').innerHTML=html;$('#mbg').classList.add('on');}
+function closeMod(){$('#mbg').classList.remove('on');}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),1700);}
+function esc(s){return(s==null?'':''+s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function ea(s){return esc(s).replace(/"/g,'&quot;');}
+function nl(s){return esc(s).replace(/\\n/g,'<br>').replace(/\n/g,'<br>');}
+function exportData(){const b=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='thornwall.json';a.click();toast('Exportado');}
+function importData(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{D=JSON.parse(r.result);SEL=null;saveNow();render();toast('Importado');}catch{toast('Arquivo inválido');}};r.readAsText(f);ev.target.value='';}
+function resetAll(){if(confirm('Restaurar dados originais? Perderá todas as alterações.')){D=def();SEL=null;saveNow();render();resetView();toast('Restaurado');}}
+
+/* =====================================================
+   RENDER
+   ===================================================== */
+function render(){renderScenes();renderTokens();renderTList();renderDet();renderDiceLog();renderInit();}
+function init(){load();renderDiceQuick();renderMonsters();render();applyV();window.addEventListener('keydown',e=>{if(e.key==='Escape')closeMod();});}
+init();
+</script>
+</body>
+</html>
